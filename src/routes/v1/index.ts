@@ -6,8 +6,5 @@ export async function registerRoutes(fastify: FastifyInstance) {
     // Register authentication routes
     const { authRoutes } = await import('./auth');
     v1.register(authRoutes, { prefix: '/auth' });
-    
-    // Individual route modules will be registered here
-    // v1.register(userRoutes, { prefix: '/users' });
   }, { prefix: '/api/v1' });
 }

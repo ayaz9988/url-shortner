@@ -3,6 +3,29 @@ import { config } from 'dotenv';
 // Load environment variables
 config();
 
+// Validate critical environment variables
+function validateEnv() {
+  const required = ['JWT_SECRET', 'DATABASE_URL'];
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+  
+  // Validate JWT secret strength
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long');
+  }
+  
+  // Validate port range
+  const port = Number(process.env.PORT) || 3000;
+  if (port < 1 || port > 65535) {
+    throw new Error('PORT must be between 1 and 65535');
+  }
+}
+
+validateEnv();
+
 export const env = {
   port: Number(process.env.PORT) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
