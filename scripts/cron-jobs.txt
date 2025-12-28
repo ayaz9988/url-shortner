@@ -1,0 +1,67 @@
+# Cron Job Configuration for URL Shortener
+
+This file contains the cron job configurations for automated tasks in the URL shortener application.
+
+## Installation Instructions
+
+1. Copy the cron job entries below
+2. Open your crontab file: `crontab -e`
+3. Add the entries to schedule the tasks
+
+## Cron Job Entries
+
+### Daily Statistics Report (Every day at 2:00 AM)
+0 2 * * * cd /home/ayaz/url-shortner && npm run stats:daily >> /var/log/url-shortener-stats.log 2>&1
+
+### Cleanup Expired URLs (Every day at 3:00 AM)
+0 3 * * * cd /home/ayaz/url-shortner && npm run cleanup:expired >> /var/log/url-shortener-cleanup.log 2>&1
+
+## Alternative: Using pnpm (if pnpm is your package manager)
+0 2 * * * cd /home/ayaz/url-shortner && pnpm stats:daily >> /var/log/url-shortener-stats.log 2>&1
+0 3 * * * cd /home/ayaz/url-shortner && pnpm cleanup:expired >> /var/log/url-shortener-cleanup.log 2>&1
+
+## Alternative: Using full path to Node.js and scripts
+0 2 * * * /usr/bin/node /home/ayaz/url-shortner/src/scripts/daily-stats.ts >> /var/log/url-shortener-stats.log 2>&1
+0 3 * * * /usr/bin/node /home/ayaz/url-shortner/src/scripts/cleanup-expired.ts >> /var/log/url-shortener-cleanup.log 2>&1
+
+## Cron Schedule Format
+# * * * * * command
+# │ │ │ │ │
+# │ │ │ │ └─── day of week (0 - 7) (Sunday=0 or 7)
+# │ │ │ └───── month (1 - 12)
+# │ │ └─────── day of month (1 - 31)
+# │ └───────── hour (0 - 23)
+# └─────────── minute (0 - 59)
+
+## Log Rotation
+Consider setting up log rotation for the log files:
+- /var/log/url-shortener-stats.log
+- /var/log/url-shortener-cleanup.log
+
+Create a logrotate configuration:
+```
+/var/log/url-shortener-*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 644 root root
+}
+```
+
+## Monitoring
+To monitor cron job execution:
+- Check system cron logs: `sudo tail -f /var/log/cron`
+- Check application logs: `tail -f /var/log/url-shortener-*.log`
+- List current cron jobs: `crontab -l`
+
+## Testing
+To test the scripts manually:
+```bash
+# Test daily stats
+npm run stats:daily
+
+# Test cleanup
+npm run cleanup:expired
