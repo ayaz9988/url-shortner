@@ -21,6 +21,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.24.0",
   "dependencies": {
+    "@bboss/uuid62": "^1.2.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/rate-limit": "^10.3.0",
@@ -37,6 +38,7 @@
     "nanoid": "^5.1.6",
     "postgres": "^3.4.7",
     "redis": "^5.10.0",
+    "uuid": "^13.0.0",
     "zod": "^4.2.1"
   },
   "devDependencies": {
