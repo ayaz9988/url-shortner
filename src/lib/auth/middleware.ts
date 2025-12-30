@@ -1,4 +1,4 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyRequest, FastifyReply, preHandlerHookHandler } from 'fastify';
 import { JWTService } from './jwt';
 import { User } from '../db/schema';
 
@@ -9,11 +9,28 @@ export interface AuthenticatedRequest extends FastifyRequest {
 /**
  * Authentication middleware that extracts and validates JWT from cookies
  */
-export async function authenticateToken(
-  request: AuthenticatedRequest,
-  reply: FastifyReply
-): Promise<void> {
-  try {
+export const authenticateToken = (schema?: any): preHandlerHookHandler => {
+  return async (request: AuthenticatedRequest, reply: FastifyReply): Promise<void> => {
+    // If schema is provided, validate the request body
+    if (schema) {
+      try {
+        const validationResult = schema.safeParse(request.body);
+        if (!validationResult.success) {
+          reply.code(400).send({
+            error: 'Validation failed',
+            details: validationResult.error.errors
+          });
+          return;
+        }
+        // Replace the request body with the validated data
+        request.body = validationResult.data;
+      } catch (validationError) {
+        reply.code(400).send({ error: 'Validation failed' });
+        return;
+      }
+    }
+
+    try {
     const token = JWTService.extractTokenFromCookie(request.headers.cookie);
     
     if (!token) {
@@ -35,16 +52,34 @@ export async function authenticateToken(
   } catch (error) {
     reply.code(403).send({ error: 'Invalid or expired token' });
   }
+  }
 }
 
 /**
  * Optional authentication middleware - doesn't fail if no token provided
  */
-export async function optionalAuth(
-  request: AuthenticatedRequest,
-  reply: FastifyReply
-): Promise<void> {
-  try {
+export const optionalAuth = (schema?: any): preHandlerHookHandler => {
+  return async (request: AuthenticatedRequest, reply: FastifyReply): Promise<void> => {
+    // If schema is provided, validate the request body
+    if (schema) {
+      try {
+        const validationResult = schema.safeParse(request.body);
+        if (!validationResult.success) {
+          reply.code(400).send({
+            error: 'Validation failed',
+            details: validationResult.error.errors
+          });
+          return;
+        }
+        // Replace the request body with the validated data
+        request.body = validationResult.data;
+      } catch (validationError) {
+        reply.code(400).send({ error: 'Validation failed' });
+        return;
+      }
+    }
+
+    try {
     const token = JWTService.extractTokenFromCookie(request.headers.cookie);
     
     if (token) {
@@ -59,5 +94,6 @@ export async function optionalAuth(
   } catch (error) {
     // Silently continue without authentication
     request.user = undefined;
+  }
   }
 }
