@@ -1,4 +1,7 @@
+import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
+
+if(process.env.NODE_ENV === 'test') config({ path: '.env.test'});
 
 export default defineConfig({
   schema: './src/lib/db/schema',

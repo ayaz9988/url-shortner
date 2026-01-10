@@ -9,45 +9,53 @@ export class ShortenerService {
   private maxAttempts = 3;
 
   async createShortUrl(originalUrl: string, userId: number): Promise<{ shortCode: string }> {
+    // First, check if this URL already exists for this user
+    const existingUrl = await db
+      .select({ shortCode: urls.shortCode })
+      .from(urls)
+      .where(
+        sql`${urls.originalUrl} = ${originalUrl} AND ${urls.userId} = ${userId}`
+      )
+      .limit(1);
+
+    if (existingUrl.length > 0) {
+      return { shortCode: existingUrl[0].shortCode };
+    }
+
+    // URL doesn't exist, create a new one
     let attempts = 0;
     let shortCode: string;
-    let existingUrl: { originalUrl: string; userId: number } | undefined;
 
     do {
       shortCode = this.encodingService.generateBase62Uuid();
       const result = await db
-        .select({ originalUrl: urls.originalUrl, userId: urls.userId })
+        .select({ shortCode: urls.shortCode })
         .from(urls)
         .where(eq(urls.shortCode, shortCode))
         .limit(1);
 
-      existingUrl = result[0] as { originalUrl: string; userId: number } | undefined;
+      if (result.length === 0) {
+        // Short code is unique, use it
+        try {
+          await db.insert(urls).values({
+            shortCode,
+            originalUrl,
+            userId,
+          });
+          return { shortCode };
+        } catch (error) {
+          // Handle unique constraint violation
+          if (error instanceof Error && error.message.includes('duplicate key')) {
+            attempts++;
+            continue;
+          }
+          throw error;
+        }
+      }
       attempts++;
-    } while (existingUrl && attempts < this.maxAttempts);
+    } while (attempts < this.maxAttempts);
 
-    // Handle collision failure
-    if (existingUrl) {
-      if (existingUrl.originalUrl === originalUrl) {
-        return { shortCode };
-      }
-      throw new Error(`Could not generate a unique short code after ${this.maxAttempts} attempts.`);
-    }
-
-    try {
-      await db.insert(urls).values({
-        shortCode,
-        originalUrl,
-        userId,
-      });
-    } catch (error) {
-      // Handle unique constraint violation
-      if (error instanceof Error && error.message.includes('duplicate key')) {
-        throw new Error('Short code collision detected, please try again');
-      }
-      throw error;
-    }
-
-    return { shortCode };
+    throw new Error(`Could not generate a unique short code after ${this.maxAttempts} attempts.`);
   }
 
   async getOriginalUrl(shortCode: string): Promise<{ originalUrl: string } | null> {
