@@ -3,7 +3,6 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 import fastifyRateLimit from '@fastify/rate-limit';
 import helmet from 'helmet';
-import { setupPassport } from './lib/auth/passport';
 import { registerRoutes } from './routes/v1';
 import { env } from './config';
 
@@ -74,11 +73,6 @@ export async function setupApp(): Promise<void> {
       parseOptions: {}     // options for parsing cookies
     });
     console.log('Cookie plugin registered successfully');
-
-    // Setup Passport with JWT strategy
-    console.log('Setting up Passport...');
-    setupPassport(fastify);
-    console.log('Passport setup completed');
 
     // Register the root route
     console.log('Registering root route...');
